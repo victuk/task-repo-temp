@@ -3,137 +3,101 @@ const app = express();
 const port = 3005;
 const {v4: uuidv4} = require("uuid");
 
-app.use(express.json());
-
 let products = [];
 
-const generateId = () => Math.floor(Math.random() * 100000);
 
-// get all products
-app.get("/products", (req, res) => {
+app.use(express.json());
+
+const validStatuses = ["in-stock", "low-stock", "out-of-stock"];
+
+function generateId() {
+  return Math.floor(Math.random() * 1000000);
+}
+
+function getProducts(req, res) {
   res.json(products);
-});
+}
 
-// get products by ID
-app.get("/products/:id", (req, res) => {
+function getProductById(req, res) {
   const id = parseInt(req.params.id);
-  const product = products.find((s) => s.id === id);
+  const product = products.find(p => p.id === id);
+  if (!product) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+  res.json(product);
+}
 
-  if (!product)
-    return res
-      .status(404)
-      .json({ success: false, message: "product not found", data: product });
-
-  res.status(200).json({
-    success: true,
-    message: "product fetched successfully",
-    data: product,
-  });
-});
-
-// Create a new product
-app.post("/products", (req, res) => {
+function addProduct(req, res) {
   const { productName, cost, stockStatus } = req.body;
 
-  if (!productName || !cost || !stockStatus) {
-    return res
-      .status(400)
-      .json({ success: false, message: "All fields are mandatory" });
-  }
-
-  const validateStatus = ["in-stock", "low-stock", "out-of-stock"];
-  const normalized = stockStatus.toLowerCase();
-  if (!validateStatus.includes(normalized)) {
-    return res.status(400).json({
-      success: false,
-      message:
-        "Invalid stock status. Use in-stock, low-stock, or out-of-stock.",
-    });
+  if (!validStatuses.includes(stockStatus)) {
+    return res.status(400).json({ error: "Invalid stock status" });
   }
 
   const newProduct = {
+    id: generateId(),
     productName,
     cost,
-    stockStatus: normalized,
-    createdAt: new Date().toISOString(),
-    id: generateId(),
+    stockStatus,
+    createdAt: new Date().toISOString()
   };
 
   products.push(newProduct);
-  return res.status(201).json({
-    success: true,
-    message: "product created successfully",
-    data: newProduct,
-  });
-});
+  res.status(201).json(newProduct);
+}
 
-// update the product
-app.put("/products/:id", (req, res) => {
+function editProduct(req, res) {
   const id = parseInt(req.params.id);
-  const product = products.find((s) => s.id === id);
-  if (!product)
-    return res
-      .status(404)
-      .json({ success: false, message: "product not found" });
+  const product = products.find(p => p.id === id);
+
+  if (!product) {
+    return res.status(404).json({ error: "Product not found" });
+  }
 
   const { productName, cost } = req.body;
 
-  if (productName) product.productName = productName;
-  if (cost) product.cost = cost;
+  if (productName !== undefined) product.productName = productName;
+  if (cost !== undefined) product.cost = cost;
 
-  res.status(200).json({
-    success: true,
-    message: "product updated successfully",
-    data: product,
-  });
-});
+  res.json(product);
+}
 
-// update only the stock status
-app.patch("/products/:id/status", (req, res) => {
+function updateStockStatus(req, res) {
   const id = parseInt(req.params.id);
-  const product = products.find((s) => s.id === id);
-  if (!product)
-    return res
-      .status(404)
-      .json({ success: false, message: "product not found" });
+  const newStatus = req.params.status;
 
-  const { stockStatus } = req.body;
-
-  const validateStatus = ["in-stock", "low-stock", "out-of-stock"];
-  const normalized = stockStatus.toLowerCase();
-  if (!validateStatus.includes(normalized)) {
-    return res.status(400).json({
-      success: false,
-      message:
-        "Invalid stock status. Use in-stock, low-stock, or out-of-stock.",
-    });
+  if (!validStatuses.includes(newStatus)) {
+    return res.status(400).json({ error: "Invalid stock status" });
   }
 
-  product.stockStatus = normalized;
-  res.status(200).json({
-    success: true,
-    message: "stock status updated successfully",
-    data: product,
-  });
-});
+  const product = products.find(p => p.id === id);
+  if (!product) {
+    return res.status(404).json({ error: "Product not found" });
+  }
 
-// delete the products by ID
-app.delete("/products/:id", (req, res) => {
+  product.stockStatus = newStatus;
+  res.json(product);
+}
+
+function deleteProduct(req, res) {
   const id = parseInt(req.params.id);
-  const product = products.findIndex((s) => s.id === id);
-  if (product === -1)
-    return res.status(404).json({
-      success: false,
-      message: "product not found",
-    });
+  const index = products.findIndex(p => p.id === id);
 
-  const [deleted] = products.splice(product, 1);
-  res.status(200).json({
-    success: true,
-    message: "product deleted successfully",
-    data: deleted,
-  });
-});
+  if (index === -1) {
+    return res.status(404).json({ error: "Product not found" });
+  }
+
+  products.splice(index, 1);
+  res.json({ message: "Product deleted successfully" });
+}
+
+
+app.get("/products", getProducts);
+app.get("/products/:id", getProductById);
+app.post("/products", addProduct);
+app.patch("/products/:id", editProduct);
+app.patch("/products/:id/:status", updateStockStatus);
+app.delete("/products/:id", deleteProduct);
 
 app.listen(port, () => {
   console.log(`Provision API running at http://localhost:${port}`);

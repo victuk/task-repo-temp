@@ -14,6 +14,38 @@ const getAllTodo = async (req, res) => {
     }
 }
 
+const addMultipleTodo = async (req, res) => {
+    const {todos} = req.body;
+
+    console.log(todos);
+
+    const {error} = joi.object({
+        todos: joi.array().items(joi.string().min(4)).min(2).required().messages({
+            "array.min": "Todo array must contain at least two todos"
+        })
+    }).validate({todos});
+
+    if(error) {
+        res.status(400).send({
+            errorMessage: error.message
+        });
+        return;
+    }
+
+    const todosWithUser = todos.map(todo => {
+        todo.userId = req.decoded.userId;
+        return todo;
+    })
+
+    const newTodos = await todoModel.create(todosWithUser);
+
+    res.status(201).send({
+        message: "Todos created",
+        newTodos
+    });
+
+}
+
 
 const addNewTodo = async (req, res) => {
     
@@ -116,5 +148,6 @@ module.exports = {
     getAllTodo,
     viewSingleTodo,
     updateTodoStatus,
-    deleteTodo
+    deleteTodo,
+    addMultipleTodo
 }

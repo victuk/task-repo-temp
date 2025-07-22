@@ -1,166 +1,132 @@
 class ProvisionStore {
-    #shopName;
-    #location;
-  
-    products = [];
-  
-    constructor(shopName, location) {
-      this.#shopName = shopName;
-      this.#location = location;
-      this.products = [];
-    }
-  
-    //  Get the  shop name
-    getShopName() {
-      return this.#shopName;
-    }
-  
-    //  Get the shop location
-    getLocation() {
-      return this.#location;
-    }
-  
-    updateLocation(newLocation) {
-      if (!newLocation || typeof newLocation !== "string") {
-        return {
-          success: false,
-          message: "invalide location",
-        };
-      }
-      this.#location = newLocation;
-      return {
-        success: true,
-        message: "shop location updated successfully",
-      };
-    }
-  
-    // Return the list of products
-    listProducts() {
-      return this.products;
-    }
-  
-    // Get product by ID
-    getProductById(id) {
-      return this.products.find((p) => p.id === id) || null;
-    }
-  
-    // Add a new product
-    addProduct({ productName, cost, stockStatus }) {
-      const validStatus = ["in-stock", "low-stock", "out-of-stock"];
-      const normalized = stockStatus.toLowerCase();
-      if (!validStatus.includes(normalized)) {
-        return {
-          success: false,
-          message:
-            "Invalid stock status. Use in-stock, low-stock, or out-of-stock.",
-        };
-      }
-  
-      const newProduct = {
-        productName,
-        cost: parseFloat(cost.toString().replace(/,/g, "")),
-        stockStatus: normalized,
-        createdAt: new Date().toISOString(),
-        id: Math.floor(Math.random() * 100000),
-      };
-      this.products.push(newProduct);
-      return {
-        success: true,
-        message: "product added successfully",
-        newProduct,
-      };
-    }
-  
-    // Edit a product by ID
-    editProductById(id, newValues) {
-      const product = this.getProductById(id);
-      if (!product) {
-        return {
-          success: false,
-          message: "product not found",
-        };
-      }
-  
-      if (newValues.productName) product.productName = newValues.productName;
-      if (newValues.cost)
-        product.cost = parseFloat(newValues.cost.toString().replace(/,/g, ""));
-      return {
-        success: true,
-        message: "product edited successfully",
-        data: product,
-      };
-    }
-  
-    // Update stock status by ID
-    updateStockStatus(id, newStatus) {
-      const product = this.getProductById(id);
-      if (!product) {
-        return {
-          success: false,
-          message: "product not found",
-        };
-      }
-  
-      const validStatus = ["in-stock", "low-stock", "out-of-stock"];
-      const normalized = newStatus.toLowerCase();
-      if (!validStatus.includes(normalized)) {
-        return {
-          success: false,
-          message:
-            "Invalid stock status. Use in-stock, low-stock, or out-of-stock.",
-        };
-      }
-  
-      product.stockStatus = normalized;
-      return {
-        success: true,
-        message: "stock updated successfully",
-        data: product,
-      };
-    }
-  
-    // Delete product by ID
-    deleteProductById(id) {
-      const index = this.products.findIndex((p) => p.id === id);
-      if (index === -1) {
-        return {
-          success: false,
-          message: "product not found",
-        };
-      }
-      const deleted = this.products.splice(index, 1)[0];
-      return {
-        success: true,
-        message: "product deleted successfully",
-        data: deleted,
-      };
-    }
+  #shopName;
+  #location;
+
+  constructor(shopName, location) {
+    this.#shopName = shopName;
+    this.#location = location;
+    this.products = [];
   }
+
+  generateId() {
+    return Math.floor(Math.random() * 100000);
+  }
+
+  addProduct(productName, cost, stockStatus) {
+    const allowedStatus = ["in-stock", "low-stock", "out-of-stock"];
+    if (!allowedStatus.includes(stockStatus)) {
+      throw new Error("Invalid stock status");
+    }
+
+    const product = {
+      id: this.generateId(),
+      productName,
+      cost,
+      stockStatus,
+      createdAt: new Date()
+    };
+
+    this.products.push(product);
+    return product;
+  }
+
+  getAllProducts() {
+    return this.products;
+  }
+
+  getProductById(id) {
+    for (let i = 0; i < this.products.length; i++) {
+      if (this.products[i].id === id) {
+        return this.products[i];
+      }
+    }
+    console.log("Product not found");
+    return null;
+  }
+
+  deleteProductById(id) {
+    const newProducts = [];
+    let deletedProduct = null;
+
+    for (let i = 0; i < this.products.length; i++) {
+      if (this.products[i].id !== id) {
+        newProducts.push(this.products[i]);
+      } else {
+        deletedProduct = this.products[i];
+      }
+    }
+
+    this.products = newProducts;
+    return deletedProduct;
+  }
+
+  editProduct(id, updatedFields) {
+    const product = this.getProductById(id);
+    if (!product) {
+      console.log("Product not found");
+      return null;
+    }
+
+    if (updatedFields.productName !== undefined) {
+      product.productName = updatedFields.productName;
+    }
+
+    if (updatedFields.cost !== undefined) {
+      product.cost = updatedFields.cost;
+    }
+
+    return product;
+  }
+
+  updateStockStatus(id, newStatus) {
+    if (!["in-stock", "low-stock", "out-of-stock"].includes(newStatus)) {
+      console.log("Invalid stock status");
+      return null;
+    }
+
+    let product = null;
+
+    for (let i = 0; i < this.products.length; i++) {
+      if (this.products[i].id === id) {
+        product = this.products[i];
+        product.stockStatus = newStatus;
+        break;
+      }
+    }
+
+    if (!product) {
+      console.log("Product not found");
+      return null;
+    }
+
+    return product;
+  }
+}
 
 
 
 // Example usage:
 const p = new ProvisionStore("Ud's Store", "Lagos");
 
-console.log("First list", p.listProducts());
+console.log("First list", p.getAllProducts());
 
-p.addProduct({productName: "Hair", cost: 2000, stockStatus: "in-stock"});
+p.addProduct("Hair", 2000, "in-stock");
 
 // const pDetails = p.products[0];
-const pDetails = p.listProducts()[0];
+const pDetails = p.getAllProducts()[0];
 
-console.log("List after adding a product", p.listProducts());
+console.log("List after adding a product", p.getAllProducts());
 
-p.editProductById(pDetails.id, {productName: "Edted product name", cost: 40000});
+p.editProduct(pDetails.id, {productName: "Edted product name", cost: 40000});
 
-console.log("List after updating product cost", p.listProducts());
+console.log("List after updating product cost", p.getAllProducts());
 
 p.updateStockStatus(pDetails.id, "low-stock");
 
-console.log("List after updating product stock status", p.listProducts());
+console.log("List after updating product stock status", p.getAllProducts());
 
 p.deleteProductById(pDetails.id);
 
-console.log("List after deleting a product", p.listProducts());
+console.log("List after deleting a product", p.getAllProducts());
 
 module.exports = ProvisionStore;

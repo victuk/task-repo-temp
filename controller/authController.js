@@ -5,11 +5,29 @@ const bcrypt = require("bcrypt");
 const smtp = require("../utility/sendEmail");
 const {v4} = require("uuid");
 const jsonWebToken = require("jsonwebtoken");
+const Joi = require("joi");
 
 async function register(req, res) {
     const {
         fullName, email, password, role
     } = req.body;
+
+
+    const {error} = Joi.object({
+        fullName: Joi.string().min(4).required(),
+        email: Joi.string().email({tlds: {allow: false}}).required(),
+        password: Joi.string().min(8).alphanum().required(),
+        role: Joi.string().valid("customer", "admin")
+    }).validate({
+        fullName, email, password, role
+    });
+
+    if(error) {
+        res.status(422).send({
+            errorMessage: error.message
+        });
+        return;
+    }    
 
     const emailExists = await userModel.findOne({email});
 
@@ -93,6 +111,22 @@ async function verifyOTP(req, res) {
 async function login(req, res) {
 
     const {email, password} = req.body;
+
+    const {error} = Joi.object({
+        email: Joi.string().email({tlds: {allow: false}}).required(),
+        password: Joi.string().min(8).alphanum().required().messages({
+            "string.min": "Password has to be at least 8 characters long",
+            "string.empty": "Password can not be empty",
+            "any.required": "The password field is required"
+        })
+    }).validate(req.body);
+
+    if(error) {
+        res.status(422).send({
+            errorMessage: error.message
+        });
+        return;
+    }
 
     const userDetail = await userModel.findOne({email});
     if(!userDetail) {
