@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { sendMail } = require("../utility/sendEmail");
 
 
 const initializePayment = async (req, res) => {
@@ -29,6 +30,14 @@ const paystackWebhook = async (req, res) => {
     try {
         
         console.log(req.body);
+        
+         await sendMail({
+            to: "ukokjnr@gmail.com",
+            subject: "Paystack webhook",
+            html: `
+                ${JSON.stringify(req.body)}
+            `
+         });
 
         res.sendStatus(200);
 

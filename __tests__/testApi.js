@@ -3,100 +3,98 @@ const app = express();
 const port = 3005;
 const {v4: uuidv4} = require("uuid");
 
-let products = [];
-
 
 app.use(express.json());
 
-const validStatuses = ["in-stock", "low-stock", "out-of-stock"];
+let shop = [];
 
-function generateId() {
-  return Math.floor(Math.random() * 1000000);
+const getAllProduct = (req, res) => {
+    res.send(shop);
+}
+const addNewProduct = (req, res) => {
+    const id = Math.floor(Math.random() * 10000);
+    const productName = req.body.productName;
+    const cost = parseInt(req.body.cost); 
+    const stockStatus = req.body.stockStatus;
+    const createdAt = new Date()
+
+    shop.push({
+        id,
+        productName,
+        cost,
+        stockStatus,
+        createdAt,
+    });
+    res.send({
+        message : "Product added successfully"
+    })
+    
+    
+}
+const viewSingleProduct = (req, res) => {
+    const id = req.params.id;
+    let productFound;
+
+    for(let i = 0; i<shop.length; i++){
+        if(shop[i].id == id){
+            productFound = shop[i];
+        }
+    }
+    if(!productFound){
+        res.status(404).send("Product not found");
+        return
+    }
+    res.send({
+        message: "Product Found",
+        productFound
+    })
 }
 
-function getProducts(req, res) {
-  res.json(products);
+const updateProductStatus = (req, res) => {
+    const id = req.params.id;
+    const isDone = req.body.isDone;
+
+    const updatedProduct = [];
+
+    for(let i = 0; i < shop.length; i++) {
+        if(shop[i].id == id) {
+            shop[i].isDone = isDone
+        }
+        updatedProduct.push(shop[i]);
+    }
+    shop = updatedProduct;
+
+    res.send({
+        message: "product updated successfully",
+        shop
+    });
 }
 
-function getProductById(req, res) {
-  const id = parseInt(req.params.id);
-  const product = products.find(p => p.id === id);
-  if (!product) {
-    return res.status(404).json({ error: "Product not found" });
-  }
-  res.json(product);
-}
+const deleteProduct = (req, res) =>{
+    const id = req.params.id;
+    const updatedProduct = [];
+    let deletedProduct
 
-function addProduct(req, res) {
-  const { productName, cost, stockStatus } = req.body;
-
-  if (!validStatuses.includes(stockStatus)) {
-    return res.status(400).json({ error: "Invalid stock status" });
-  }
-
-  const newProduct = {
-    id: generateId(),
-    productName,
-    cost,
-    stockStatus,
-    createdAt: new Date().toISOString()
-  };
-
-  products.push(newProduct);
-  res.status(201).json(newProduct);
-}
-
-function editProduct(req, res) {
-  const id = parseInt(req.params.id);
-  const product = products.find(p => p.id === id);
-
-  if (!product) {
-    return res.status(404).json({ error: "Product not found" });
-  }
-
-  const { productName, cost } = req.body;
-
-  if (productName !== undefined) product.productName = productName;
-  if (cost !== undefined) product.cost = cost;
-
-  res.json(product);
-}
-
-function updateStockStatus(req, res) {
-  const id = parseInt(req.params.id);
-  const newStatus = req.params.status;
-
-  if (!validStatuses.includes(newStatus)) {
-    return res.status(400).json({ error: "Invalid stock status" });
-  }
-
-  const product = products.find(p => p.id === id);
-  if (!product) {
-    return res.status(404).json({ error: "Product not found" });
-  }
-
-  product.stockStatus = newStatus;
-  res.json(product);
-}
-
-function deleteProduct(req, res) {
-  const id = parseInt(req.params.id);
-  const index = products.findIndex(p => p.id === id);
-
-  if (index === -1) {
-    return res.status(404).json({ error: "Product not found" });
-  }
-
-  products.splice(index, 1);
-  res.json({ message: "Product deleted successfully" });
+    for(let i; i<shop.length; i++){
+        if(shop[i].id != id){
+            updatedProduct.push(shop[i]);
+        }else{
+            deletedProduct = shop[i]
+        }
+    }
+    shop = updatedProduct;
+    res.send({
+        message: "Product deleted successfully",
+        deletedProduct
+        
+    });
 }
 
 
-app.get("/products", getProducts);
-app.get("/products/:id", getProductById);
-app.post("/products", addProduct);
-app.patch("/products/:id", editProduct);
-app.patch("/products/:id/:status", updateStockStatus);
+app.get("/products", getAllProduct);
+app.post("/products", addNewProduct);
+app.get("/products/:id", viewSingleProduct);
+app.patch("/products/:id", updateProductStatus);
 app.delete("/products/:id", deleteProduct);
 
 app.listen(port, () => {
