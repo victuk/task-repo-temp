@@ -32,6 +32,7 @@ const paystackWebhook = async (req, res) => {
         console.log(req.body);
         
          await sendMail({
+            from: "ukokjnr@gmail.com",
             to: "ukokjnr@gmail.com",
             subject: "Paystack webhook",
             html: `
