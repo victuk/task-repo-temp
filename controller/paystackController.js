@@ -30,7 +30,7 @@ const initializePayment = async (req, res) => {
 const paystackWebhook = async (req, res) => {
     try {
         
-        console.log(req.body);
+        console.log("webhook response", req.body);
         
          await sendMail({
             from: "ukokjnr@gmail.com",
