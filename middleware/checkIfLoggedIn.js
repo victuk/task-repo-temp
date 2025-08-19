@@ -8,7 +8,6 @@ function checkIfLoggedIn(req, res, next) {
         const [scheme, token] = req.headers.authorization.split(" ");
 
         if(scheme.toLocaleLowerCase() == "bearer") {
-            jsonWebToken.decode()
             const value = jsonWebToken.verify(token, process.env.JWT_KEY);
             req.decoded = value;
             next();

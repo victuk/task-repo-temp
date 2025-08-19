@@ -2,29 +2,32 @@ const mongoose = require("mongoose");
 const paginate = require("mongoose-paginate-v2");
 
 const schema = new mongoose.Schema({
-    otp: {
-        type: String,
-        required: true
-    },
-    otpToken: {
-        type: String,
-        required: true
-    },
-    userId: {
+    user: {
         type: mongoose.Types.ObjectId,
         ref: "users",
         required: true
     },
-    purpose: {
+    title: {
         type: String,
-        enum: ["verify-email", "reset-password"],
         required: true
-    }
+    },
+    description: {
+        type: String,
+        required: true
+    },
+    date: {
+        type: Date,
+        default: null
+    },
+    taskId: {
+        type: String,
+        required: true
+    },
 }, {timestamps: true});
 
 schema.plugin(paginate);
 
-const otpModel = mongoose.model("otps", schema);
+const chatsModel = mongoose.model("chats", schema);
 
 
-module.exports = otpModel;
+module.exports = chatsModel;

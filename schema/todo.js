@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const paginate = require("mongoose-paginate-v2");
 
 const schema = new mongoose.Schema({
     title: {
@@ -22,6 +23,8 @@ const schema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+
+schema.plugin(paginate);
 
 const todoModel = mongoose.model("todos", schema);
 

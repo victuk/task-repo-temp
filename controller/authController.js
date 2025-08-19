@@ -52,7 +52,7 @@ async function register(req, res) {
         otp, otpToken: generateOTPToken, userId: newUser._id, purpose: "verify-email"
     });
 
-    await smtp.sendMail({
+    smtp.sendMail({
         from: process.env.EMAIL_USERNAME,
         to: email,
         subject: "Company Name - Verify Email",

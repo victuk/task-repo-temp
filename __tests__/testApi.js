@@ -1,101 +1,78 @@
 const express = require("express");
+
 const app = express();
 const port = 3005;
-const {v4: uuidv4} = require("uuid");
-
 
 app.use(express.json());
 
-let shop = [];
+let products = []; // In-memory products array
+let nextId = 1;
 
-const getAllProduct = (req, res) => {
-    res.send(shop);
-}
-const addNewProduct = (req, res) => {
-    const id = Math.floor(Math.random() * 10000);
-    const productName = req.body.productName;
-    const cost = parseInt(req.body.cost); 
-    const stockStatus = req.body.stockStatus;
-    const createdAt = new Date()
+// GET all products
+app.get('/products', (req, res) => {
+    res.json(products);
+});
 
-    shop.push({
-        id,
-        productName,
-        cost,
-        stockStatus,
-        createdAt,
-    });
-    res.send({
-        message : "Product added successfully"
-    })
-    
-    
-}
-const viewSingleProduct = (req, res) => {
-    const id = req.params.id;
-    let productFound;
+// GET product by ID
+app.get('/products/:id', (req, res) => {
+    const product = products.find(p => p.id === parseInt(req.params.id));
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+    res.json(product);
+});
 
-    for(let i = 0; i<shop.length; i++){
-        if(shop[i].id == id){
-            productFound = shop[i];
-        }
+// POST new product
+app.post('/products', (req, res) => {
+    const { name, price, stockStatus } = req.body;
+    if (!name || !price || !stockStatus) {
+        return res.status(400).json({ message: 'Missing fields' });
     }
-    if(!productFound){
-        res.status(404).send("Product not found");
-        return
+
+    const product = {
+        id: nextId++,
+        name,
+        price,
+        stockStatus // e.g., 'in-stock' or 'out-of-stock'
+    };
+    products.push(product);
+    res.status(201).json(product);
+});
+
+// PATCH edit product (except stock status)
+app.patch('/products/:id', (req, res) => {
+    const product = products.find(p => p.id === parseInt(req.params.id));
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    const { name, price } = req.body;
+    if (name !== undefined) product.name = name;
+    if (price !== undefined) product.price = price;
+
+    res.json(product);
+});
+
+// PATCH change only stock status
+app.patch('/products/:id/:status', (req, res) => {
+    const product = products.find(p => p.id === parseInt(req.params.id));
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    const validStatuses = ['in-stock', 'out-of-stock'];
+    const { status } = req.params;
+
+    if (!validStatuses.includes(status)) {
+        return res.status(400).json({ message: 'Invalid stock status' });
     }
-    res.send({
-        message: "Product Found",
-        productFound
-    })
-}
 
-const updateProductStatus = (req, res) => {
-    const id = req.params.id;
-    const isDone = req.body.isDone;
+    product.stockStatus = status;
+    res.json(product);
+});
 
-    const updatedProduct = [];
+// DELETE a product
+app.delete('/products/:id', (req, res) => {
+    const index = products.findIndex(p => p.id === parseInt(req.params.id));
+    if (index === -1) return res.status(404).json({ message: 'Product not found' });
 
-    for(let i = 0; i < shop.length; i++) {
-        if(shop[i].id == id) {
-            shop[i].isDone = isDone
-        }
-        updatedProduct.push(shop[i]);
-    }
-    shop = updatedProduct;
-
-    res.send({
-        message: "product updated successfully",
-        shop
-    });
-}
-
-const deleteProduct = (req, res) =>{
-    const id = req.params.id;
-    const updatedProduct = [];
-    let deletedProduct
-
-    for(let i; i<shop.length; i++){
-        if(shop[i].id != id){
-            updatedProduct.push(shop[i]);
-        }else{
-            deletedProduct = shop[i]
-        }
-    }
-    shop = updatedProduct;
-    res.send({
-        message: "Product deleted successfully",
-        deletedProduct
-        
-    });
-}
-
-
-app.get("/products", getAllProduct);
-app.post("/products", addNewProduct);
-app.get("/products/:id", viewSingleProduct);
-app.patch("/products/:id", updateProductStatus);
-app.delete("/products/:id", deleteProduct);
+    const deleted = products.splice(index, 1);
+    res.json({ message: 'Product deleted', product: deleted[0] });
+});
 
 app.listen(port, () => {
   console.log(`Provision API running at http://localhost:${port}`);

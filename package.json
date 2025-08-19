@@ -7,7 +7,8 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "test:class": "jest ./__tests__/testClass",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:auth": "jest ./__tests__/simpletest.test.js NODE_ENV=test"
   },
   "keywords": [
     "sample",
@@ -26,9 +27,15 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.1",
+    "mongoose-paginate-v2": "^1.9.1",
     "multer": "^2.0.1",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.3",
-    "nodemon": "^3.1.10",
+    "socket.io": "^4.8.1",
+    "supertest": "^7.1.4",
     "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
   }
 }

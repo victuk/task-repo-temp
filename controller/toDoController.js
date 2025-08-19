@@ -1,13 +1,58 @@
 const transporter = require("../utility/sendEmail");
 const todoModel = require("../schema/todo");
 const joi = require("joi");
+const { default: axios } = require("axios");
+
 
 const getAllTodo = async (req, res) => {
     try {
+
+        const {title, sort, taskStatus, page, limit, brandValue} = req.query;
+
+        let query = {};
+
+        let sortObject = {};
+        
+        if(brandValue && brandValue.length > 0) {
+            query.brand = {$in: brandValue}
+        }
+
+        if(title && title.length > 2) {
+            query.title = {$regex: title, $options: "i"};
+        }
+
+        if(sort && sort == "date-asc") {
+            sortObject.createdAt = 1;
+        } else if (sort == "date-desc") {
+            sortObject.createdAt = -1;
+        }
+
+        if(taskStatus) {
+            query.todoStatus = taskStatus;
+        }
+
         console.log("get decoded value",req.decoded);
-        const todo = await todoModel.find();
+        // const todo = await todoModel
+        // .find()
+        // .select("title description userId")
+        // .populate("", "-password");
+
+        const todo = await todoModel
+        .paginate(query, {
+            page: (page && isNaN(page) == false ) ? parseInt(page) : 1,
+            limit: (limit && isNaN(limit) == false) ? parseInt(limit) : 10,
+            populate: [
+                {
+                    path: "userId",
+                    select: "-password -createdAt -updatedAt"
+                }
+            ],
+            sort: sortObject
+        });
+
         res.send(todo);
     } catch (error) {
+        console.log(error);
         res.status(500).send({
             error
         });
