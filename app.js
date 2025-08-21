@@ -43,6 +43,12 @@ app.use('/paystack', paystackRouter);
 app.use('/message', messageRouter);
 app.use('/scheduler', cronRouter);
 
+app.post("/flutterwave-webhook", (req, res) => {
+    console.log("Request body", req.body);
+
+    res.send("Done");
+});
+
 app.get("/normalize", async (req, res) => {
     await userModel.updateMany({}, {
         role: "user"
